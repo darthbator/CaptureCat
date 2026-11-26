@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.dev/
+.env
+tools/mediamtx/mediamtx.exe
+tools/mediamtx/LICENSE
+tools/mediamtx/mediamtx.yml
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# MediaMTX auto-generated TLS cert/key (private key: never commit)
+auto.crt
+auto.key
+*.key
+.env.local

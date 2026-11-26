@@ -1,0 +1,113 @@
+# Production stack for a single self-hosted server.
+#   cp infra/.env.example infra/.env   # fill in DOMAIN, secrets, OAuth credentials
+#   docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+#
+# Networks: "internal" has no internet access (postgres, worker). The worker processes
+# untrusted uploads with ffmpeg, so it can reach the database but nothing outside.
+name: capturecat
+
+x-app-env: &app-env
+  NODE_ENV: production
+  DATA_DIR: /data
+  BASE_URL: https://${DOMAIN}
+  DATABASE_URL: postgres://capturecat:${POSTGRES_PASSWORD}@postgres:5432/capturecat
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+  MEDIAMTX_SECRET: ${MEDIAMTX_SECRET}
+  MEDIAMTX_API_URL: http://mediamtx:9997
+  MEDIAMTX_HLS_URL: http://mediamtx:8888
+  DEFAULT_QUOTA_GB: ${DEFAULT_QUOTA_GB:-20}
+  MIN_FREE_DISK_GB: ${MIN_FREE_DISK_GB:-5}
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: capturecat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: capturecat
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U capturecat"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: { context: .., dockerfile: infra/Dockerfile, target: app }
+    restart: unless-stopped
+    command: ["pnpm", "--filter", "@capturecat/api", "start"]
+    environment:
+      <<: *app-env
+      HOST: 0.0.0.0
+      PORT: 4000
+      INGEST_HOST: ${INGEST_HOST:-${DOMAIN}}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+    volumes:
+      - media:/data
+    # edge: OAuth providers need outbound internet; internal: database + MediaMTX.
+    networks: [internal, edge]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  worker:
+    build: { context: .., dockerfile: infra/Dockerfile, target: app }
+    restart: unless-stopped
+    command: ["pnpm", "--filter", "@capturecat/worker", "start"]
+    environment: *app-env
+    volumes:
+      - media:/data
+    networks: [internal]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.4
+    # Same uid as the app containers so the worker can read and delete recordings.
+    user: "1000:1000"
+    restart: unless-stopped
+    environment:
+      MTX_AUTHHTTPADDRESS: http://api:4000/api/mediamtx/auth?secret=${MEDIAMTX_SECRET}
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+      - media:/data
+    ports:
+      - "1935:1935"        # RTMP (OBS)
+      - "8890:8890/udp"    # SRT
+      - "8889:8889"        # WHIP (WebRTC ingest)
+      - "8189:8189/udp"    # WebRTC ICE
+    networks: [internal, edge]
+
+  caddy:
+    build: { context: .., dockerfile: infra/Dockerfile, target: caddy }
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge]
+    depends_on: [api]
+
+networks:
+  internal:
+    internal: true
+  edge: {}
+
+volumes:
+  pgdata:
+  media:
+  caddy_data:
+  caddy_config:

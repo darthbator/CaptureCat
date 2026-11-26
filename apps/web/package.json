@@ -1,0 +1,38 @@
+{
+  "name": "@capturecat/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p .",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@capturecat/shared": "workspace:*",
+    "@tanstack/react-query": "^5.108.4",
+    "@tanstack/react-router": "^1.170.46",
+    "@trpc/client": "^11.31.6",
+    "@trpc/tanstack-react-query": "^11.31.6",
+    "@uppy/core": "^6.3.2",
+    "@uppy/tus": "^6.0.1",
+    "better-auth": "^1.7.28",
+    "hls.js": "^1.7.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@capturecat/api": "workspace:*",
+    "@playwright/test": "^1.65.1",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "tailwindcss": "^4.3.5",
+    "vite": "^8.4.0",
+    "@trpc/server": "^11.31.6",
+    "ffmpeg-static": "^5.3.0"
+  }
+}

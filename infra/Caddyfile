@@ -1,0 +1,26 @@
+# Production entry point: HTTPS (automatic Let's Encrypt for $DOMAIN), the SPA, and the API.
+# The API itself enforces auth on /api, /media and /live.
+{$DOMAIN} {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		-Server
+	}
+
+	@backend path /api/* /media/* /live/*
+	handle @backend {
+		# flush_interval -1: stream SSE and LL-HLS responses immediately.
+		reverse_proxy api:4000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		encode zstd gzip
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+}

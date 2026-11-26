@@ -1,0 +1,48 @@
+# MediaMTX config for local development (run from the repo root by scripts/dev.mjs).
+# Production uses infra/mediamtx.yml (Docker paths, secrets from env).
+logLevel: info
+
+# Every action is authorized by the Capture Cat API:
+# - publish: stream key check
+# - read/playback/api: only the API itself (internal basic-auth credentials)
+authMethod: http
+authHTTPAddress: http://127.0.0.1:4000/api/mediamtx/auth?secret=dev-mediamtx-secret
+
+api: true
+apiAddress: 127.0.0.1:9997
+metrics: false
+pprof: false
+playback: false
+
+# Ingest
+rtmp: true
+rtmpAddress: :1935
+srt: true
+srtAddress: :8890
+webrtc: true
+webrtcAddress: :8889
+rtsp: false
+
+# Live HLS: internal only; browsers reach it through the API's /live proxy (auth-checked).
+hls: true
+hlsAddress: 127.0.0.1:8888
+hlsVariant: lowLatency
+hlsAllowOrigins: []
+hlsSegmentCount: 30
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+
+pathDefaults:
+  record: true
+  recordPath: ./.dev/data/recordings/%path/%s-%f
+  recordFormat: fmp4
+  recordPartDuration: 1s
+  recordSegmentDuration: 10m
+  # Capture Cat deletes recordings itself after finalizing them.
+  recordDeleteAfter: 0s
+  # Don't let a second publisher with the same key take over a live stream.
+  overridePublisher: false
+
+paths:
+  # Only live/<channelId> is accepted.
+  "~^live/[A-Za-z0-9]+$": {}
