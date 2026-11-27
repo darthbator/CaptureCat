@@ -9,9 +9,9 @@ Full design and rationale: `docs/ARCHITECTURE.md` (§9 = as-built differences + 
 unverified). Update it whenever a decision changes.
 
 ## Status
-Phases 0–4 are built and tested locally (unit, API smoke, Playwright E2E).
-Not yet verified: the Docker/Caddy production stack (no Docker on the dev machine), real
-OAuth providers, Safari/iOS, OBS itself. Open questions: docs/ARCHITECTURE.md §8.
+Phases 0–4 are built and tested locally (unit, API smoke, Playwright E2E), and the Docker
+stack has been deployed and tested on a LAN server. Not yet verified: a real domain
+(CADDY_MODE=public), real OAuth providers, Safari/iOS, OBS itself. Open questions: docs/ARCHITECTURE.md §8.
 Don't commit unless the user asks.
 
 ## Commands (run from repo root)
@@ -29,6 +29,15 @@ pnpm isn't installed globally: use `npx pnpm@10.34.9 <cmd>` (or install pnpm).
 - `npx pnpm@10.34.9 build`: production SPA build (apps/web/dist)
 - Production: `docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build`
   (see infra/.env.example); backups: `sh scripts/backup.sh`.
+
+## Deployment notes
+- Deploy = push to GitHub, then on the server `git pull --ff-only && docker compose -f
+  infra/docker-compose.yml --env-file infra/.env up -d --build`.
+- CADDY_MODE: `public` = real domain + Let's Encrypt; `lan` = IP/local name, catch-all
+  https:// with Caddy's internal CA (browsers send no SNI for IPs, so the catch-all is required).
+- A service whose mounted config changed (e.g. mediamtx.yml) needs `docker compose restart <svc>`.
+- Never print infra/.env values; `docker compose config` output includes DATABASE_URL with the
+  Postgres password. Keep host names/IPs out of the repo.
 
 ## Layout
 - packages/shared: constants, geometry (letterbox math, marker clustering), timing (default

@@ -213,7 +213,11 @@ index annotations(video_id, start_ms)
 - `pnpm test:smoke`: 50 end-to-end API checks against the running stack (login wall, dev login, Origin check, tus upload → HLS, remux and CPU-transcode paths, malicious playlist rejected, path traversal, private/public permissions, SSE, suspension, quota refusal, wrong stream key rejected, live HLS has `PROGRAM-DATE-TIME`, live annotation survives finalize, stream disconnected when quota is reached mid-broadcast with the partial recording kept, delete + quota accounting).
 - `pnpm test:e2e`: 4 Playwright browser tests (login redirect, dev login, two-user upload → publish → annotate → real-time → click-to-seek, live annotation without pausing → recording).
 
+**Verified in Docker** (a LAN server, `CADDY_MODE=lan`, DOMAIN = LAN IP): images build; HTTPS via Caddy; login wall (401 on API/media/live/events); dev login absent (404); worker has no internet but reaches Postgres; wrong stream key rejected; RTMP → live video → MediaMTX HLS reachable only with internal credentials → finalized 720p recording (remux, poster, sprite, HLS) with the raw recording deleted; shared `/data` volume permissions correct.
+
+First-deploy fixes: Caddy needed `CADDY_MODE=lan` (catch-all `https://` + `tls internal`) because browsers send no SNI for IP addresses; the worker now waits for the API's migrations; MediaMTX's unused MoQ server is disabled.
+
 **Not verified yet:**
-- The **Docker/Caddy production stack** (`infra/`): Docker isn't installed on the dev machine, so the Dockerfile and compose file have never been built or run.
+- Production on a **real domain** (`CADDY_MODE=public`, Let's Encrypt) and access from outside the LAN.
 - **Real OAuth providers** and the **mock OIDC** compose file: no OAuth apps are configured yet; all testing used dev login.
 - **Safari / iOS** playback (native HLS path, `getStartDate()` live clock) and OBS itself (tests push RTMP with ffmpeg).
