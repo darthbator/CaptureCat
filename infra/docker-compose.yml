@@ -109,6 +109,14 @@ networks:
 
 volumes:
   pgdata:
+  # Videos, uploads in progress and raw live recordings, in a host folder you choose
+  # (MEDIA_DIR in infra/.env). Create it and give it to uid 1000 before the first start:
+  #   sudo mkdir -p "$MEDIA_DIR" && sudo chown 1000:1000 "$MEDIA_DIR"
   media:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MEDIA_DIR:-/srv/capturecat/media}
   caddy_data:
   caddy_config:

@@ -6,7 +6,12 @@
   - `80` and `443`: HTTPS (`80` is needed to get the certificate)
   - `1935`: RTMP from OBS
   - *Optional:* `8890/udp` (SRT) and `8889` + `8189/udp` (WHIP)
-- Make sure there's enough disk space for video. Docker volumes live under `/var/lib/docker` by default.
+- **Video storage:** pick a folder on a disk with enough space; all video lives there (see `MEDIA_DIR` below). The containers run as uid 1000, so give the folder to that user:
+  ```bash
+  sudo mkdir -p /srv/capturecat/media
+  sudo chown 1000:1000 /srv/capturecat/media
+  ```
+  The database and HTTPS certificates stay in Docker volumes under `/var/lib/docker` (they're small).
 
 ## 2. Get the code and configure it
 
@@ -20,6 +25,7 @@ Edit `infra/.env`:
 
 ```ini
 DOMAIN=capturecat.example.com
+MEDIA_DIR=/srv/capturecat/media            # where videos are stored on the host
 POSTGRES_PASSWORD=<openssl rand -base64 36>
 BETTER_AUTH_SECRET=<openssl rand -base64 36>
 MEDIAMTX_SECRET=<openssl rand -hex 24>     # hex: it goes into a URL
@@ -64,3 +70,16 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env exec postgres \
 2. In OBS, set:
    - **Server:** `rtmp://<domain>:1935/live`
    - **Stream key:** the key shown on that page
+
+## Moving video storage later
+
+Docker never changes an existing volume's settings, so changing `MEDIA_DIR` after the first start takes a few steps:
+
+```bash
+docker compose -f infra/docker-compose.yml --env-file infra/.env down
+sudo mkdir -p /new/path && sudo chown 1000:1000 /new/path
+sudo cp -a /old/path/. /new/path/                  # keep ownership
+# set MEDIA_DIR=/new/path in infra/.env, then:
+docker volume rm capturecat_media
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d
+```

@@ -35,6 +35,10 @@ pnpm isn't installed globally: use `npx pnpm@10.34.9 <cmd>` (or install pnpm).
   infra/docker-compose.yml --env-file infra/.env up -d --build`.
 - CADDY_MODE: `public` = real domain + Let's Encrypt; `lan` = IP/local name, catch-all
   https:// with Caddy's internal CA (browsers send no SNI for IPs, so the catch-all is required).
+- Video data (/data in api, worker, mediamtx) is the `media` volume, bind-mounted to MEDIA_DIR
+  on the host (default /srv/capturecat/media, must exist, owned by uid 1000). Docker never
+  updates an existing volume's options: changing MEDIA_DIR needs `down` + `docker volume rm
+  capturecat_media` (copy the data first). Postgres/Caddy data stay in named volumes.
 - A service whose mounted config changed (e.g. mediamtx.yml) needs `docker compose restart <svc>`.
 - Never print infra/.env values; `docker compose config` output includes DATABASE_URL with the
   Postgres password. Keep host names/IPs out of the repo.

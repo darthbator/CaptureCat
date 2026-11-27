@@ -1,0 +1,19 @@
+# The Docker build context is the repo root (infra/docker-compose.yml: context ..).
+# The Dockerfile does `COPY . .`, so anything not excluded here ends up inside the images.
+
+# Secrets: deployment env files and their backups, TLS keys
+**/.env
+**/.env.*
+*.key
+*.crt
+*.pem
+
+# Local state and build output
+.git
+.dev
+**/node_modules
+**/dist
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+tools/mediamtx
