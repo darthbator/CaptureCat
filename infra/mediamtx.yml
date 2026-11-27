@@ -23,6 +23,8 @@ srtAddress: :8890
 webrtc: true
 webrtcAddress: :8889
 rtsp: false
+# Media over QUIC: unused. Disabled so MediaMTX doesn't generate auto.key/auto.crt.
+moq: false
 
 # Live HLS: internal only; browsers reach it through the API's /live proxy (auth-checked).
 hls: true

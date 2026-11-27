@@ -1,5 +1,11 @@
 # Production entry point: HTTPS (automatic Let's Encrypt for $DOMAIN), the SPA, and the API.
 # The API itself enforces auth on /api, /media and /live.
+{
+	# Clients send no SNI when connecting to a bare IP (e.g. DOMAIN=192.168.x.x on a LAN);
+	# without this Caddy aborts the TLS handshake.
+	default_sni {$DOMAIN}
+}
+
 {$DOMAIN} {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"

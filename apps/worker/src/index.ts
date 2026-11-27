@@ -234,6 +234,18 @@ async function finalizeLive(job: FinalizeLiveJob) {
   }
 }
 
+/** The API applies migrations on startup; wait for them so the worker never races it. */
+async function waitForSchema() {
+  for (let i = 0; i < 120; i++) {
+    const [row] = await sql`select to_regclass('public.video') is not null as ready`;
+    if (row?.ready) return;
+    if (i === 0) log("waiting for database migrations (applied by the API)");
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  throw new Error("Database schema not found after 4 minutes; is the API running?");
+}
+await waitForSchema();
+
 const boss = new PgBoss({ connectionString: DATABASE_URL, schema: "pgboss" });
 boss.on("error", (err) => log("pg-boss error", { err: String(err) }));
 await boss.start();
