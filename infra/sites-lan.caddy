@@ -1,0 +1,6 @@
+# LAN / IP address: certificate from Caddy's internal CA. The catch-all https:// address
+# lets clients that send no SNI (every browser, for IP addresses) complete the handshake.
+{$DOMAIN}, https:// {
+	tls internal
+	import app
+}

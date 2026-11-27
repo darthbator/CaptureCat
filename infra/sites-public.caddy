@@ -1,0 +1,4 @@
+# Real domain: automatic Let's Encrypt certificate.
+{$DOMAIN} {
+	import app
+}

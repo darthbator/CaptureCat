@@ -1,12 +1,16 @@
-# Production entry point: HTTPS (automatic Let's Encrypt for $DOMAIN), the SPA, and the API.
+# Production entry point: HTTPS, the SPA, and the API.
 # The API itself enforces auth on /api, /media and /live.
+#
+# CADDY_MODE picks how the site is served (set in infra/.env):
+#   public (default)  DOMAIN is a real hostname → Let's Encrypt certificate
+#   lan               DOMAIN is a LAN IP/hostname → Caddy's own CA (browser warning).
+#                     Browsers send no SNI for IP addresses, so lan mode adds a catch-all
+#                     https:// address; without it the TLS handshake is aborted.
 {
-	# Clients send no SNI when connecting to a bare IP (e.g. DOMAIN=192.168.x.x on a LAN);
-	# without this Caddy aborts the TLS handshake.
 	default_sni {$DOMAIN}
 }
 
-{$DOMAIN} {
+(app) {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options nosniff
@@ -30,3 +34,5 @@
 		file_server
 	}
 }
+
+import /etc/caddy/sites-{$CADDY_MODE:public}.caddy

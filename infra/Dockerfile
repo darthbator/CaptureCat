@@ -30,5 +30,5 @@ USER node
 # The command (api or worker) is set per service in docker-compose.yml.
 
 FROM caddy:2.10 AS caddy
-COPY infra/Caddyfile /etc/caddy/Caddyfile
+COPY infra/Caddyfile infra/sites-*.caddy /etc/caddy/
 COPY --from=web-build /app/apps/web/dist /srv/web
