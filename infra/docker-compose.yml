@@ -35,9 +35,12 @@ services:
       retries: 20
 
   api:
+    # One image for the API and the worker (built here, reused by the worker).
     build: { context: .., dockerfile: infra/Dockerfile, target: app }
+    image: capturecat-app:latest
     restart: unless-stopped
-    command: ["pnpm", "--filter", "@capturecat/api", "start"]
+    working_dir: /app/apps/api
+    command: ["node_modules/.bin/tsx", "src/index.ts"]
     environment:
       <<: *app-env
       HOST: 0.0.0.0
@@ -59,9 +62,11 @@ services:
       postgres: { condition: service_healthy }
 
   worker:
-    build: { context: .., dockerfile: infra/Dockerfile, target: app }
+    image: capturecat-app:latest
+    pull_policy: never
     restart: unless-stopped
-    command: ["pnpm", "--filter", "@capturecat/worker", "start"]
+    working_dir: /app/apps/worker
+    command: ["node_modules/.bin/tsx", "src/index.ts"]
     environment: *app-env
     volumes:
       - media:/data

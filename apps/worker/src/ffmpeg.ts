@@ -1,10 +1,14 @@
 import { spawn } from "node:child_process";
-import ffprobeInstaller from "@ffprobe-installer/ffprobe";
-import ffmpegStatic from "ffmpeg-static";
+import { createRequire } from "node:module";
 
-/** Binaries: env override (Docker image installs ffmpeg), else the npm-provided builds. */
-export const FFMPEG = process.env.FFMPEG_PATH || (ffmpegStatic as unknown as string);
-export const FFPROBE = process.env.FFPROBE_PATH || ffprobeInstaller.path;
+/**
+ * Binaries: env override (the Docker image installs Debian's ffmpeg), else the npm-provided
+ * builds (dev only: they're devDependencies, so they're loaded lazily and never in production).
+ */
+const require = createRequire(import.meta.url);
+export const FFMPEG: string = process.env.FFMPEG_PATH || (require("ffmpeg-static") as string);
+export const FFPROBE: string =
+  process.env.FFPROBE_PATH || (require("@ffprobe-installer/ffprobe") as { path: string }).path;
 
 /**
  * Demuxers we accept for uploads. Playlist-style formats (hls, concat, etc.) are rejected:
